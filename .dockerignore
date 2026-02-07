@@ -1,0 +1,12 @@
+frontend/
+output/
+download/
+temp/
+draft/
+uploads/
+*.bat
+.git/
+.claude/
+.env
+log.txt
+end_order.txt

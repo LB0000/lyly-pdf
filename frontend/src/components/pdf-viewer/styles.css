@@ -1,0 +1,709 @@
+/*
+ * PDF Viewer - Print Studio Cinema Aesthetic
+ * Dark, immersive environment with warm paper accents
+ * Glass-morphism controls, smooth transitions
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap');
+
+/* ============================================
+   CSS Variables
+   ============================================ */
+
+/* Variables are defined on both overlay and container */
+.pdf-modal-overlay,
+.pdf-modal-container {
+  --pdf-bg: #0a0a0b;
+  --pdf-bg-subtle: #111113;
+  --pdf-surface: rgba(24, 24, 27, 0.8);
+  --pdf-surface-hover: rgba(39, 39, 42, 0.9);
+  --pdf-border: rgba(63, 63, 70, 0.4);
+  --pdf-border-subtle: rgba(63, 63, 70, 0.2);
+
+  /* Paper - warm cream tones */
+  --pdf-paper: #faf8f5;
+  --pdf-paper-shadow: rgba(0, 0, 0, 0.4);
+
+  /* Accent - warm amber */
+  --pdf-accent: #f59e0b;
+  --pdf-accent-glow: rgba(245, 158, 11, 0.15);
+  --pdf-accent-subtle: rgba(245, 158, 11, 0.08);
+
+  /* Text */
+  --pdf-text: #fafafa;
+  --pdf-text-muted: #a1a1aa;
+  --pdf-text-subtle: #71717a;
+
+  /* Typography */
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-sans: 'Instrument Sans', system-ui, sans-serif;
+
+  /* Timing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+}
+
+/* ============================================
+   Modal Overlay
+   ============================================ */
+
+.pdf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdf-modal-overlay.visible {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ============================================
+   Modal Container
+   ============================================ */
+
+.pdf-modal-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 1400px;
+  max-height: 95vh;
+  background: var(--pdf-bg);
+  border-radius: 20px;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    0 0 100px rgba(245, 158, 11, 0.1);
+  opacity: 0;
+  transform: scale(0.95) translateY(20px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdf-modal-container.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Ambient Background Glow */
+.pdf-ambient-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, var(--pdf-accent-subtle), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(59, 130, 246, 0.05), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.pdf-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(to bottom, var(--pdf-bg) 0%, transparent 100%);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity var(--duration-normal) var(--ease-out-quart),
+    transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.pdf-header.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pdf-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdf-file-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--pdf-surface);
+  border: 1px solid var(--pdf-border);
+  border-radius: 10px;
+  color: var(--pdf-accent);
+}
+
+.pdf-file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pdf-file-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pdf-text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.pdf-file-type {
+  font-size: 11px;
+  color: var(--pdf-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pdf-close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--pdf-surface);
+  border: 1px solid var(--pdf-border);
+  border-radius: 10px;
+  color: var(--pdf-text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.pdf-close-button:hover {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+  border-color: var(--pdf-border);
+}
+
+/* ============================================
+   Viewport & Canvas
+   ============================================ */
+
+.pdf-viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  overflow: auto;
+  z-index: 1;
+}
+
+.pdf-canvas {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdf-document-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdf-document {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pdf-page-wrapper {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 6px -1px var(--pdf-paper-shadow),
+    0 25px 50px -12px var(--pdf-paper-shadow),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+  transition: opacity var(--duration-normal) var(--ease-out-quart);
+}
+
+/* Override react-pdf styles for paper look */
+.pdf-page-wrapper .react-pdf__Page {
+  background: var(--pdf-paper) !important;
+}
+
+.pdf-page-wrapper .react-pdf__Page__canvas {
+  display: block;
+}
+
+/* ============================================
+   Floating Controls
+   ============================================ */
+
+.pdf-controls {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.pdf-controls > * {
+  pointer-events: auto;
+}
+
+.pdf-controls-center {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out-quart);
+}
+
+.pdf-controls.visible .pdf-controls-center {
+  opacity: 1;
+}
+
+.pdf-controls-bottom {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-out-quart);
+}
+
+.pdf-controls.visible .pdf-controls-bottom {
+  opacity: 1;
+}
+
+/* ============================================
+   Toolbar
+   ============================================ */
+
+.pdf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--pdf-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--pdf-border);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--pdf-border);
+  margin: 0 6px;
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--pdf-text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+}
+
+.toolbar-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.toolbar-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Zoom Slider */
+.zoom-slider-container {
+  position: relative;
+  width: 80px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.zoom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--pdf-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--pdf-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+  transition: transform var(--duration-fast) ease;
+}
+
+.zoom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.zoom-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--pdf-accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Zoom Display & Dropdown */
+.zoom-display {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--pdf-text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.zoom-display:hover {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+}
+
+.zoom-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.95);
+  min-width: 140px;
+  padding: 6px;
+  background: var(--pdf-surface);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--pdf-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--duration-fast) var(--ease-out-quart);
+}
+
+.group:hover .zoom-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+}
+
+.zoom-preset {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--pdf-text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.zoom-preset:hover {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+}
+
+.zoom-preset.active {
+  color: var(--pdf-accent);
+}
+
+.zoom-dropdown-divider {
+  height: 1px;
+  background: var(--pdf-border);
+  margin: 6px 0;
+}
+
+/* ============================================
+   Page Navigation
+   ============================================ */
+
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--pdf-surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--pdf-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.page-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--pdf-text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.page-nav-button:hover:not(:disabled) {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+}
+
+.page-nav-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--pdf-text-muted);
+}
+
+.page-label {
+  color: var(--pdf-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+}
+
+.page-input {
+  width: 36px;
+  padding: 4px 6px;
+  background: var(--pdf-bg-subtle);
+  border: 1px solid var(--pdf-border-subtle);
+  border-radius: 6px;
+  color: var(--pdf-text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+  outline: none;
+  transition: all var(--duration-fast) ease;
+}
+
+.page-input:focus {
+  border-color: var(--pdf-accent);
+  box-shadow: 0 0 0 3px var(--pdf-accent-glow);
+}
+
+.page-separator {
+  color: var(--pdf-text-subtle);
+}
+
+.page-total {
+  color: var(--pdf-text-muted);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.pdf-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(to top, var(--pdf-bg) 0%, transparent 100%);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-normal) var(--ease-out-quart),
+    transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.pdf-footer.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.pdf-action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--pdf-surface);
+  border: 1px solid var(--pdf-border);
+  border-radius: 10px;
+  color: var(--pdf-text-muted);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.pdf-action-button:hover {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+  border-color: var(--pdf-border);
+}
+
+.pdf-action-button.primary {
+  background: linear-gradient(135deg, var(--pdf-accent), #d97706);
+  border-color: transparent;
+  color: #000;
+}
+
+.pdf-action-button.primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+}
+
+/* ============================================
+   Keyboard Hints
+   ============================================ */
+
+.pdf-hints {
+  position: absolute;
+  bottom: 70px;
+  right: 20px;
+  z-index: 15;
+  display: flex;
+  gap: 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--pdf-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-out-quart);
+}
+
+.pdf-hints.visible {
+  opacity: 0.5;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  .pdf-modal-overlay {
+    padding: 12px;
+  }
+
+  .pdf-modal-container {
+    border-radius: 16px;
+    max-height: 100%;
+  }
+
+  .pdf-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 320px;
+  }
+
+  .toolbar-separator {
+    display: none;
+  }
+
+  .zoom-slider-container {
+    width: 60px;
+  }
+
+  .pdf-hints {
+    display: none;
+  }
+
+  .pdf-viewport {
+    padding: 40px 12px;
+  }
+
+  .pdf-header {
+    padding: 12px 16px;
+  }
+
+  .pdf-footer {
+    padding: 12px 16px;
+  }
+}
+
+/* ============================================
+   Loading & Error States (from PDFViewer)
+   ============================================ */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}

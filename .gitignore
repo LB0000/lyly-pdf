@@ -1,0 +1,23 @@
+# 生成物（巨大）
+output/
+download/
+draft/
+temp/
+uploads/
+
+# 環境設定
+.env
+
+# フロントエンド
+frontend/node_modules/
+frontend/.next/
+
+# ログ
+log.txt
+end_order.txt
+
+# CSVデータ（顧客情報）
+*.csv
+
+# OS
+.DS_Store

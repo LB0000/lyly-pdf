@@ -1,0 +1,7 @@
+{
+    "require": {
+        "tecnickcom/tcpdf": "^6.7",
+        "setasign/fpdi": "^2.6",
+        "azuyalabs/yasumi": "^2.7"
+    }
+}

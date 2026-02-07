@@ -1,0 +1,33 @@
+{
+	auto_https off
+	admin off
+}
+
+:{$PORT:8080} {
+	root * /app
+
+	# PHP FastCGI
+	php_fastcgi 127.0.0.1:9000 {
+		# SSEのバッファリングを無効化
+		flush_interval -1
+	}
+
+	# 静的ファイル配信
+	file_server
+
+	# セキュリティヘッダー
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+	}
+
+	# アップロードサイズ制限 (20MB)
+	request_body {
+		max_size 20MB
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

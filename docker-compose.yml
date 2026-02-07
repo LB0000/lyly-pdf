@@ -1,0 +1,21 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./output:/app/output
+    environment:
+      - CORS_ORIGINS=http://localhost:3000
+      # - AUTH_PASSWORD=your_password_here  # 認証を有効にする場合はコメント解除
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        PHP_BACKEND_URL: http://backend:8080
+        NEXT_PUBLIC_PHP_DIRECT_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
