@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y \
 
 # PHP拡張モジュール
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd curl mbstring zip fileinfo pdo_sqlite
+    && docker-php-ext-install -j$(nproc) gd zip fileinfo pdo_sqlite
 
 # PHP設定
 RUN echo "memory_limit = 1024M" > /usr/local/etc/php/conf.d/lyly.ini \
