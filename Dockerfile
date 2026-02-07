@@ -42,7 +42,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # 書き込み用ディレクトリ作成
 RUN mkdir -p download temp draft output uploads \
-    && chmod -R 777 download temp draft output uploads
+    && chmod -R 777 download temp draft output uploads \
+    && touch log.txt end_order.txt \
+    && chmod 666 log.txt end_order.txt
 
 EXPOSE 8080
 
