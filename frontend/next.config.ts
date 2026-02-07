@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  ...(process.env.STANDALONE === '1' ? { output: 'standalone' } : {}),
   async rewrites() {
     return [
       {
