@@ -20,7 +20,7 @@ export function usePDFViewer() {
   const [state, setState] = useState<PDFViewerState>({
     numPages: 0,
     pageNumber: 1,
-    scale: 1,
+    scale: 0.5,
     rotation: 0,
     isLoading: true,
     error: null,
