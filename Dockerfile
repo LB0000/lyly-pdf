@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     supervisor \
     curl \
-    && curl -fsSL https://caddyserver.com/api/download?os=linux&arch=amd64 -o /usr/local/bin/caddy \
+    && curl -fsSL "https://caddyserver.com/api/download?os=linux&arch=amd64" -o /usr/local/bin/caddy \
     && chmod +x /usr/local/bin/caddy \
     && rm -rf /var/lib/apt/lists/*
 
