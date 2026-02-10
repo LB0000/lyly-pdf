@@ -700,12 +700,16 @@
 			$tcpdf->Output($file_path, "F");
 
 			//ガイドラインオーバーレイ処理================
+			// クリーン版はそのまま保持、_gl版にガイドラインを重ねる
 			global $GUIDELINE_OVERLAY_DISABLE;
 			$overlay_enabled = GUIDELINE_OVERLAY && empty($GUIDELINE_OVERLAY_DISABLE);
+			$gl_path = null;
 			if($overlay_enabled && isset(GUIDELINE_PDFS[$k]) && !empty(GUIDELINE_PDFS[$k])){
 				$guideline_path = GUIDELINE_PDFS[$k];
 				if(file_exists($guideline_path)){
-					overlay_guideline($file_path, $guideline_path, GUIDELINE_ALPHA);
+					$gl_path = preg_replace('/\.pdf$/i', '_gl.pdf', $file_path);
+					copy($file_path, $gl_path);
+					overlay_guideline($gl_path, $guideline_path, GUIDELINE_ALPHA);
 				} else {
 					e("ガイドラインPDF not found: ".$guideline_path);
 				}
@@ -714,6 +718,9 @@
 
 			if(ROTATE){
 				rotate($file_path);
+				if($gl_path && file_exists($gl_path)){
+					rotate($gl_path);
+				}
 			}
 			//=======================
 		}
@@ -1086,6 +1093,64 @@
 		return (int)$dt->format('d');
 	}
 
+	// 古い出力フォルダを削除（最新$keep_count件を保持）
+	function cleanup_output($keep_count = 5){
+		$outputDir = OUTPUT_DIR;
+		if (!is_dir($outputDir)) {
+			print "出力フォルダが存在しません\n";
+			return;
+		}
+
+		// output/内のディレクトリを収集
+		$dirs = [];
+		foreach (scandir($outputDir) as $entry) {
+			if ($entry === '.' || $entry === '..') continue;
+			$path = $outputDir . $entry;
+			if (is_dir($path)) {
+				$dirs[] = ['name' => $entry, 'path' => $path, 'mtime' => filemtime($path)];
+			}
+		}
+
+		// 更新日時の新しい順にソート
+		usort($dirs, function($a, $b) { return $b['mtime'] - $a['mtime']; });
+
+		if (count($dirs) <= $keep_count) {
+			printf("出力フォルダ: %d件（保持上限 %d件以下のため削除なし）\n", count($dirs), $keep_count);
+			return;
+		}
+
+		// 古いフォルダを削除対象に
+		$to_delete = array_slice($dirs, $keep_count);
+		$deleted_count = 0;
+		$deleted_size = 0;
+
+		foreach ($to_delete as $dir) {
+			// フォルダサイズを概算（ZIP + フォルダ）
+			$zip_path = $dir['path'] . '.zip';
+			if (file_exists($zip_path)) {
+				$deleted_size += filesize($zip_path);
+				unlink($zip_path);
+			}
+
+			// フォルダを再帰削除
+			$it = new RecursiveDirectoryIterator($dir['path'], RecursiveDirectoryIterator::SKIP_DOTS);
+			$files = new RecursiveIteratorIterator($it, RecursiveIteratorIterator::CHILD_FIRST);
+			foreach ($files as $file) {
+				$deleted_size += $file->getSize();
+				if ($file->isDir()) {
+					rmdir($file->getRealPath());
+				} else {
+					unlink($file->getRealPath());
+				}
+			}
+			rmdir($dir['path']);
+			$deleted_count++;
+		}
+
+		$size_mb = round($deleted_size / 1024 / 1024);
+		printf("クリーンアップ完了: %d件削除（約%dMB解放）、最新%d件を保持\n", $deleted_count, $size_mb, $keep_count);
+	}
+
 	// タイムスタンプ付き出力フォルダを作成
 	function createOutputFolder(){
 		// 競合を防ぐためユニークIDを追加
@@ -1195,6 +1260,10 @@
 			if (!$file->isDir()) {
 				$filePath = $file->getRealPath();
 				if ($filePath === false) {
+					continue;
+				}
+				// _gl.pdf をスキップ（プレビュー専用ファイル）
+				if (preg_match('/_gl\.pdf$/i', $filePath)) {
 					continue;
 				}
 				if (strpos($filePath, $realPathWithSep) !== 0) {

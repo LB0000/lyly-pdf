@@ -947,6 +947,12 @@ function handlePreview() {
         jsonError('PDFファイルではありません', 400);
     }
 
+    // _gl版（ガイドライン付き）が存在すればプレビュー用に優先
+    $glFile = preg_replace('/\.pdf$/i', '_gl.pdf', $file);
+    if ($glFile !== $file && file_exists($glFile)) {
+        $file = $glFile;
+    }
+
     // インライン表示（ブラウザ内でプレビュー）
     $filename = preg_replace('/["\r\n]/', '', basename($file));
     header('Content-Type: application/pdf');
