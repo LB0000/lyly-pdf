@@ -2,6 +2,17 @@
 
 	require_once('./include/common.php');
 
+	// --cleanup コマンド: 古い出力フォルダを削除
+	if(isset($argv[1]) && strpos($argv[1], '--cleanup') === 0){
+		$keep = 5;
+		if(strpos($argv[1], '=') !== false){
+			$keep = (int)explode('=', $argv[1])[1];
+			if($keep < 1) $keep = 1;
+		}
+		cleanup_output($keep);
+		exit;
+	}
+
 	if(isset($argv[1])){
 		$skipped_logs = [];
 		$csv = csv_to_array($argv[1], $skipped_logs);
@@ -31,6 +42,24 @@
 	} else {
 		print "処理タイプ(all, temp, draft)を指定してください";
 		exit;
+	}
+
+	// --filter オプション: 特定注文のみに絞り込み
+	$filter = null;
+	foreach ($argv as $arg) {
+		if (strpos($arg, '--filter=') === 0) {
+			$filter = substr($arg, 9);
+			break;
+		}
+	}
+	if ($filter !== null) {
+		$csv = array_filter($csv, function($row) use ($filter) {
+			$name = $row['Name'] ?? '';
+			$base_name = preg_replace('/\(\d+\)$/', '', $name);
+			return $name === $filter || $base_name === $filter;
+		});
+		$csv = array_values($csv);
+		printf("フィルタ適用: %s → %d件\n", $filter, count($csv));
 	}
 
 	// ドライランモード: CSV検証のみ実行
@@ -72,6 +101,14 @@
 				foreach($keys as $k2=> $v2){
 					create_pdf_one($v, $v2);
 				}
+				// テキスト検証
+				$validation = validate_order_text($v, $keys);
+				if (!empty($validation['warnings'])) {
+					printf("\n");
+					foreach ($validation['warnings'] as $w) {
+						printf("  [%s] %s - %s: %s\n", strtoupper($w['type']), $name, $w['field'], $w['message']);
+					}
+				}
 			}
 			printf("\r[2/3] 個別PDF生成完了: %d件                        \n", $total_orders);
 		}
@@ -111,6 +148,8 @@
 			end_order_append($csv);
 			printf("end_order.txt に %d件 追記完了\n", count($csv));
 		}
+		// 古い出力フォルダを自動クリーンアップ（最新10件を保持）
+		cleanup_output(10);
 	} else {
 		print "新しい注文情報がありませんでした";
 	}

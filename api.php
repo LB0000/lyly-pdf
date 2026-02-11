@@ -287,6 +287,14 @@ function handleGenerate() {
                         $successCount++;
                         $logs[] = ['message' => $name . '...作成完了', 'type' => 'success'];
                     }
+                    // テキスト検証（非ブロッキング）
+                    $validation = validate_order_text($v, $keys);
+                    foreach ($validation['warnings'] as $w) {
+                        $logs[] = [
+                            'message' => sprintf('%s [%s] %s: %s', $name, $w['type'], $w['field'], $w['message']),
+                            'type' => 'warning',
+                        ];
+                    }
                 } else {
                     $failedOrders[] = [
                         'name' => $name,
@@ -388,8 +396,12 @@ function handleGenerate() {
             error_log('DB保存エラー: ' . $dbErr->getMessage());
         }
 
-        // 一時CSVを削除
+        // 一時CSVを削除（変換済みファイルも含む）
         unlink($csvFile);
+        global $CONVERTED_CSV_PATH;
+        if (!empty($CONVERTED_CSV_PATH) && file_exists($CONVERTED_CSV_PATH)) {
+            @unlink($CONVERTED_CSV_PATH);
+        }
 
         jsonSuccess([
             'logs' => $logs,
@@ -403,6 +415,10 @@ function handleGenerate() {
         // 例外時もアップロードCSVを削除（残留防止）
         if (isset($csvFile) && file_exists($csvFile)) {
             @unlink($csvFile);
+        }
+        global $CONVERTED_CSV_PATH;
+        if (!empty($CONVERTED_CSV_PATH) && file_exists($CONVERTED_CSV_PATH)) {
+            @unlink($CONVERTED_CSV_PATH);
         }
         jsonError('PDF生成エラー: ' . $e->getMessage());
     }
@@ -533,6 +549,14 @@ function handleGenerateStream() {
                         $successCount++;
                         sse_emit('success', $name . '...作成完了', ['progress' => round($orderIndex / $totalOrders * 100)]);
                     }
+                    // テキスト検証（非ブロッキング）
+                    $validation = validate_order_text($v, $keys);
+                    if (!empty($validation['warnings'])) {
+                        sse_emit('validation', $name . ' テキスト検証', [
+                            'order_name' => $name,
+                            'warnings' => $validation['warnings'],
+                        ]);
+                    }
                 } else {
                     $failedOrders[] = $name;
                     sse_emit('error', $name . '...テンプレートなし');
@@ -611,9 +635,13 @@ function handleGenerateStream() {
         sse_emit('done', 'エラーで終了', ['files' => [], 'zipFile' => null]);
     }
 
-    // クリーンアップ
+    // クリーンアップ（変換済みファイルも含む）
     if (isset($csvFile) && file_exists($csvFile)) {
         @unlink($csvFile);
+    }
+    global $CONVERTED_CSV_PATH;
+    if (!empty($CONVERTED_CSV_PATH) && file_exists($CONVERTED_CSV_PATH)) {
+        @unlink($CONVERTED_CSV_PATH);
     }
 }
 

@@ -9,7 +9,8 @@ import { PDFPreviewPanel } from '@/components/PDFPreviewPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HistoryList } from '@/components/HistoryList';
-import { api, type LogEntry, type GeneratedFile, type GenerationMode, type SSEEvent } from '@/lib/api';
+import { ValidationPanel } from '@/components/ValidationPanel';
+import { api, type LogEntry, type GeneratedFile, type GenerationMode, type SSEEvent, type OrderValidation } from '@/lib/api';
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -22,10 +23,12 @@ export default function Home() {
   const [previewFile, setPreviewFile] = useState<GeneratedFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
+  const [validations, setValidations] = useState<OrderValidation[]>([]);
 
   const handleFileSelect = useCallback((file: File) => {
     setSelectedFile(file);
     setError(null);
+    setValidations([]);
   }, []);
 
   const handleGenerate = useCallback(async () => {
@@ -37,6 +40,7 @@ export default function Home() {
     setZipUrl(null);
     setError(null);
     setProgress(0);
+    setValidations([]);
 
     try {
       setLogs([{ message: `CSVファイルをアップロード中: ${selectedFile.name}`, type: 'info' }]);
@@ -49,10 +53,29 @@ export default function Home() {
           if (event.files) setGeneratedFiles(event.files);
           if (event.zipFilePath) setZipUrl(api.getDownloadUrl(event.zipFilePath));
           setProgress(100);
+        } else if (event.type === 'validation') {
+          // テキスト検証イベント: 注文単位で収集
+          if (event.order_name && event.warnings) {
+            setValidations((prev) => {
+              // 重複order_nameがあれば警告をマージ
+              const existing = prev.find((v) => v.order_name === event.order_name);
+              if (existing) {
+                return prev.map((v) =>
+                  v.order_name === event.order_name
+                    ? { ...v, warnings: [...v.warnings, ...event.warnings!] }
+                    : v
+                );
+              }
+              return [...prev, {
+                order_name: event.order_name!,
+                warnings: event.warnings!,
+              }];
+            });
+          }
         } else {
           // ログイベント: リアルタイムで追加
           setLogs((prev) => [...prev, { message: event.message, type: event.type as LogEntry['type'] }]);
-          if (event.progress) setProgress(event.progress);
+          if (event.progress !== undefined) setProgress(event.progress);
         }
       });
     } catch (err) {
@@ -70,6 +93,7 @@ export default function Home() {
     setGeneratedFiles([]);
     setZipUrl(null);
     setError(null);
+    setValidations([]);
   }, []);
 
   return (
@@ -171,6 +195,7 @@ export default function Home() {
           )}
 
           <LogViewer logs={logs} isGenerating={isGenerating} />
+          <ValidationPanel validations={validations} isGenerating={isGenerating} />
         </div>
 
         {/* Right Column - File List */}

@@ -120,15 +120,32 @@
 	function csv_to_array($file_path, &$skipped_logs = null){
 		mb_internal_encoding('UTF-8');
 
+		if ($skipped_logs === null) {
+			$skipped_logs = [];
+		}
+
+		// エンコーディング検知・自動変換
+		$encoding_result = validate_and_convert_encoding($file_path);
+		if ($encoding_result['converted']) {
+			$file_path = $encoding_result['path'];
+			// 変換後ファイルパスを記録（クリーンアップ用）
+			global $CONVERTED_CSV_PATH;
+			$CONVERTED_CSV_PATH = $encoding_result['path'];
+		}
+		foreach ($encoding_result['warnings'] as $w) {
+			$skipped_logs[] = [
+				'line' => 0,
+				'name' => '(エンコーディング)',
+				'reason' => $w,
+			];
+		}
+
 		$file = fopen($file_path, 'r');
 		if ($file === false) {
 			throw new Exception("CSVファイルを開けません: " . $file_path);
 		}
 		$headers = fgetcsv($file, 0, ",", "\"", "\\");
 		$data = []; // 配列を初期化
-		if ($skipped_logs === null) {
-			$skipped_logs = [];
-		}
 
 		// 各行を処理
 		$no = 0;
@@ -981,6 +998,14 @@
 							$checked_urls[$url] = true;
 						}
 					}
+				}
+			}
+
+			// チェック4: テキスト検証（タイポ・日付・文字化け）
+			if ($keys !== null) {
+				$validation = validate_order_text($row, $keys);
+				foreach ($validation['warnings'] as $w) {
+					$errors[] = sprintf('[%s] %s: %s', $w['type'], $w['field'], $w['message']);
 				}
 			}
 

@@ -79,15 +79,31 @@ const PHP_DIRECT = process.env.NEXT_PUBLIC_PHP_DIRECT_URL || 'http://localhost:8
 
 export type GenerationMode = 'normal' | 'download';
 
+// テキスト検証の警告
+export interface ValidationWarning {
+  type: 'encoding' | 'typo' | 'date' | 'time';
+  field: string;
+  message: string;
+  value: string;
+}
+
+// 注文単位の検証結果
+export interface OrderValidation {
+  order_name: string;
+  warnings: ValidationWarning[];
+}
+
 // SSEイベントのデータ型
 export interface SSEEvent {
-  type: 'success' | 'error' | 'info' | 'warning' | 'skipped' | 'done';
+  type: 'success' | 'error' | 'info' | 'warning' | 'skipped' | 'validation' | 'done';
   message: string;
   progress?: number;
   files?: GeneratedFile[];
   zipFile?: string | null;
   zipFilePath?: string | null;
   outputFolder?: string;
+  order_name?: string;
+  warnings?: ValidationWarning[];
 }
 
 // 認証トークン管理
