@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { X, ExternalLink, Download, FileText } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { X, ExternalLink, Download, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { GeneratedFile } from '@/lib/api';
 import { api } from '@/lib/api';
@@ -13,14 +13,39 @@ import './styles.css';
 
 interface PDFPreviewPanelProps {
   file: GeneratedFile | null;
+  files?: GeneratedFile[];
   onClose: () => void;
+  onFileChange?: (file: GeneratedFile) => void;
 }
 
-export function PDFPreviewPanel({ file, onClose }: PDFPreviewPanelProps) {
+export function PDFPreviewPanel({ file, files = [], onClose, onFileChange }: PDFPreviewPanelProps) {
   const { state, actions, constants } = usePDFViewer();
   const [showControls, setShowControls] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+
+  // File navigation
+  const currentIndex = useMemo(() => {
+    if (!file || files.length === 0) return -1;
+    return files.findIndex(f => f.path === file.path);
+  }, [file, files]);
+
+  const hasPrevFile = currentIndex > 0;
+  const hasNextFile = currentIndex >= 0 && currentIndex < files.length - 1;
+
+  const goToPrevFile = useCallback(() => {
+    if (hasPrevFile && onFileChange) {
+      actions.resetState();
+      onFileChange(files[currentIndex - 1]);
+    }
+  }, [hasPrevFile, onFileChange, files, currentIndex, actions]);
+
+  const goToNextFile = useCallback(() => {
+    if (hasNextFile && onFileChange) {
+      actions.resetState();
+      onFileChange(files[currentIndex + 1]);
+    }
+  }, [hasNextFile, onFileChange, files, currentIndex, actions]);
 
   // Mount check for portal
   useEffect(() => {
@@ -85,6 +110,14 @@ export function PDFPreviewPanel({ file, onClose }: PDFPreviewPanelProps) {
           e.preventDefault();
           actions.setScale(1);
           break;
+        case '[':
+          e.preventDefault();
+          goToPrevFile();
+          break;
+        case ']':
+          e.preventDefault();
+          goToNextFile();
+          break;
         case 'Escape':
           e.preventDefault();
           onClose();
@@ -94,7 +127,7 @@ export function PDFPreviewPanel({ file, onClose }: PDFPreviewPanelProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [file, actions, onClose]);
+  }, [file, actions, onClose, goToPrevFile, goToNextFile]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -144,6 +177,7 @@ export function PDFPreviewPanel({ file, onClose }: PDFPreviewPanelProps) {
   if (!file || !isMounted) return null;
 
   const previewUrl = api.getPreviewUrl(file.path);
+  const showFileNav = files.length > 1 && currentIndex >= 0;
 
   const modalContent = (
     <div
@@ -163,12 +197,40 @@ export function PDFPreviewPanel({ file, onClose }: PDFPreviewPanelProps) {
             <div className="pdf-file-icon">
               <FileText className="w-4 h-4" />
             </div>
-            <div className="pdf-file-meta">
-              <h3 className="pdf-file-name">{file.name}</h3>
-              <span className="pdf-file-type">
-                {file.type === 'draft' ? '印刷用' : '個別'} • {state.numPages > 0 ? `${state.numPages} pages` : 'Loading...'}
-              </span>
-            </div>
+
+            {showFileNav ? (
+              <div className="pdf-file-nav">
+                <button
+                  onClick={goToPrevFile}
+                  disabled={!hasPrevFile}
+                  className="pdf-file-nav-button"
+                  title="前のファイル ([)"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="pdf-file-meta">
+                  <h3 className="pdf-file-name">{file.name}</h3>
+                  <span className="pdf-file-type">
+                    {file.type === 'draft' ? '印刷用' : '個別'} • {currentIndex + 1} / {files.length}
+                  </span>
+                </div>
+                <button
+                  onClick={goToNextFile}
+                  disabled={!hasNextFile}
+                  className="pdf-file-nav-button"
+                  title="次のファイル (])"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="pdf-file-meta">
+                <h3 className="pdf-file-name">{file.name}</h3>
+                <span className="pdf-file-type">
+                  {file.type === 'draft' ? '印刷用' : '個別'} • {state.numPages > 0 ? `${state.numPages} pages` : 'Loading...'}
+                </span>
+              </div>
+            )}
           </div>
 
           <button
@@ -246,6 +308,7 @@ export function PDFPreviewPanel({ file, onClose }: PDFPreviewPanelProps) {
         <div className={`pdf-hints ${showControls ? 'visible' : ''}`}>
           <span>←→ pages</span>
           <span>+− zoom</span>
+          {showFileNav && <span>[] files</span>}
           <span>R rotate</span>
           <span>Esc close</span>
         </div>

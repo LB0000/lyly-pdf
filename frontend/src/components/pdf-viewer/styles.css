@@ -179,6 +179,39 @@
   letter-spacing: 0.05em;
 }
 
+/* File Navigation */
+.pdf-file-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdf-file-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--pdf-surface);
+  border: 1px solid var(--pdf-border);
+  border-radius: 8px;
+  color: var(--pdf-text-muted);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+  flex-shrink: 0;
+}
+
+.pdf-file-nav-button:hover:not(:disabled) {
+  background: var(--pdf-surface-hover);
+  color: var(--pdf-text);
+  border-color: var(--pdf-accent);
+}
+
+.pdf-file-nav-button:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
 .pdf-close-button {
   display: flex;
   align-items: center;

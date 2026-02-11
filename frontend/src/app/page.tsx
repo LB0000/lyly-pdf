@@ -187,7 +187,9 @@ export default function Home() {
       {/* PDF Preview Modal - renders as portal */}
       <PDFPreviewPanel
         file={previewFile}
+        files={generatedFiles}
         onClose={() => setPreviewFile(null)}
+        onFileChange={setPreviewFile}
       />
     </>
   );

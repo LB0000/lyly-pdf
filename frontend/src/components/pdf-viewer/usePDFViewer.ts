@@ -87,6 +87,17 @@ export function usePDFViewer() {
     setScale(1);
   }, [setScale]);
 
+  const resetState = useCallback(() => {
+    setState({
+      numPages: 0,
+      pageNumber: 1,
+      scale: 0.5,
+      rotation: 0,
+      isLoading: true,
+      error: null,
+    });
+  }, []);
+
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setState((prev) => ({
       ...prev,
@@ -117,6 +128,7 @@ export function usePDFViewer() {
       rotate,
       fitWidth,
       fitPage,
+      resetState,
       onDocumentLoadSuccess,
       onDocumentLoadError,
     },
