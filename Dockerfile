@@ -1,5 +1,7 @@
 FROM php:8.3-fpm
 
+ENV TZ=Asia/Tokyo
+
 # システム依存パッケージ + Caddy + supervisord
 RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
