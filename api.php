@@ -953,12 +953,24 @@ function handlePreview() {
         $file = $glFile;
     }
 
+    // キャッシュ検証用ヘッダー
+    $mtime = filemtime($file);
+    $etag = '"' . md5($file . $mtime) . '"';
+
+    // If-None-Match チェック（304 Not Modified）
+    if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === $etag) {
+        http_response_code(304);
+        exit;
+    }
+
     // インライン表示（ブラウザ内でプレビュー）
     $filename = preg_replace('/["\r\n]/', '', basename($file));
     header('Content-Type: application/pdf');
     header('Content-Disposition: inline; filename="' . $filename . '"');
     header('Content-Length: ' . filesize($file));
-    header('Cache-Control: private, max-age=300');
+    header('Cache-Control: private, max-age=3600');
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $mtime) . ' GMT');
     readfile($file);
     exit;
 }

@@ -3,6 +3,23 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { DocumentProps } from 'react-pdf';
 
+// モジュールレベルでプリロード開始（ページ読み込み時に即座にimport開始）
+let pdfModulePromise: Promise<typeof import('react-pdf')> | null = null;
+
+function preloadReactPDF() {
+  if (!pdfModulePromise) {
+    pdfModulePromise = import('react-pdf').then((module) => {
+      module.pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+      return module;
+    });
+  }
+  return pdfModulePromise;
+}
+
+if (typeof window !== 'undefined') {
+  preloadReactPDF();
+}
+
 interface PDFViewerProps {
   url: string;
   pageNumber: number;
@@ -28,17 +45,9 @@ export function PDFViewer({
     Page: React.ComponentType<any>;
   } | null>(null);
 
-  // Dynamically import react-pdf on client side only
+  // プリロード済みモジュールを取得
   useEffect(() => {
-    Promise.all([
-      import('react-pdf'),
-      // @ts-expect-error - CSS imports
-      import('react-pdf/dist/Page/AnnotationLayer.css'),
-      // @ts-expect-error - CSS imports
-      import('react-pdf/dist/Page/TextLayer.css'),
-    ]).then(([module]) => {
-      // Configure worker
-      module.pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+    preloadReactPDF().then((module) => {
       setReactPDF({
         Document: module.Document,
         Page: module.Page,
@@ -80,8 +89,9 @@ export function PDFViewer({
             pageNumber={pageNumber}
             scale={scale}
             rotate={rotation}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
+            devicePixelRatio={1}
             onLoadSuccess={handlePageLoadSuccess}
             onRenderSuccess={() => setPageLoading(false)}
             loading={null}

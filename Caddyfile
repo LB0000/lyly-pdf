@@ -6,6 +6,9 @@
 :{$PORT:8080} {
 	root * /app
 
+	# レスポンス圧縮（gzip / zstd）
+	encode gzip zstd
+
 	# PHP FastCGI
 	php_fastcgi 127.0.0.1:9000 {
 		# SSEのバッファリングを無効化

@@ -47,6 +47,25 @@ export function PDFPreviewPanel({ file, files = [], onClose, onFileChange }: PDF
     }
   }, [hasNextFile, onFileChange, files, currentIndex, actions]);
 
+  // 隣接ファイルをプリフェッチ（ファイル切り替え高速化）
+  useEffect(() => {
+    if (files.length <= 1 || currentIndex < 0) return;
+    const links: HTMLLinkElement[] = [];
+    const indices = [currentIndex - 1, currentIndex + 1];
+    for (const i of indices) {
+      if (i >= 0 && i < files.length) {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = api.getPreviewUrl(files[i].path);
+        document.head.appendChild(link);
+        links.push(link);
+      }
+    }
+    return () => {
+      links.forEach(link => document.head.removeChild(link));
+    };
+  }, [currentIndex, files]);
+
   // Mount check for portal
   useEffect(() => {
     setIsMounted(true);
